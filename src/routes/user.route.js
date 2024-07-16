@@ -6,6 +6,7 @@ const {
   loginCtrl,
   signupCtrl,
   logoutCtrl,
+  getAllUsersCtrl,
 } = require("../controllers/user.controller");
 const auth = require("../middlewares/auth.middleware");
 
@@ -14,5 +15,6 @@ const userRouter = express.Router();
 userRouter.post("/login", loginCtrl);
 userRouter.post("/signup", signupCtrl);
 userRouter.post("/logout", auth, logoutCtrl);
+userRouter.get("/", auth, getAllUsersCtrl);
 
 module.exports = userRouter;

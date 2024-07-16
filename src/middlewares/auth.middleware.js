@@ -1,5 +1,5 @@
 const jwt = require("jsonwebtoken");
-const createError = require("../services/error");
+const { createError } = require("../services/error");
 
 const auth = async (req, res, next) => {
   const token =
@@ -8,7 +8,7 @@ const auth = async (req, res, next) => {
   try {
     if (!token) throw createError(401, "You should login first!");
 
-    const user = await jwt.verify(token, process.env.JWT_SECRET);
+    const user = jwt.verify(token, process.env.JWT_SECRET);
 
     if (!user) throw createError(400, "Invalid access token!");
     req.user = user;

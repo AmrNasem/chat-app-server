@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const UserSchema = mongoose.Schema(
+const userSchema = mongoose.Schema(
   {
     email: {
       required: true,
@@ -15,13 +15,13 @@ const UserSchema = mongoose.Schema(
       type: String,
     },
     avatar: {
+      type: String,
       default:
         "https://www.citypng.com/public/uploads/preview/black-user-member-guest-icon-701751695037011q8iwf4mjbn.png",
-      type: Buffer,
     },
   },
   { timeStamps: true }
 );
 
-const User = mongoose.model("User", UserSchema);
+const User = mongoose.model("User", userSchema);
 module.exports = User;
