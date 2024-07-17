@@ -8,11 +8,6 @@ const getMessages = async (conversationId, userId) => {
     conversation: conversationId,
   }).populate("conversation", "-__v");
 
-  // const conversation = messages[0].conversation;
-
-  // if (!conversation.members.find((m) => m.toString() === userId))
-  //   throw createError(403, "You're not authorized");
-
   return messages.map((m) => ({
     ...m._doc,
     conversation: m._doc.conversation._id,
@@ -34,14 +29,6 @@ const readMessages = async (conversationId, userId) => {
   await Message.updateMany(
     { conversation: conversationId, senderId: { $ne: userId } },
     { seen: true }
-  );
-};
-
-const readMessage = async (msgId) => {
-  return await Message.findOneAndUpdate(
-    { _id: msgId },
-    { seen: true },
-    { new: true }
   );
 };
 
@@ -86,7 +73,6 @@ module.exports = {
   getMessages,
   getUnreadMessages,
   readMessages,
-  readMessage,
   receiveMessages,
   receiveMessage,
 };
