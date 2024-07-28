@@ -4,6 +4,7 @@ const {
   createConversation,
 } = require("../models/conversation.model");
 const Conversation = require("../models/conversation.schema");
+const Message = require("../models/message.schema");
 
 const getAllConversationsCtrl = async (req, res) => {
   const conversations = await getConversations(req.user._id);
@@ -36,7 +37,7 @@ const createConversationCtrl = async (req, res, next) => {
         conversation: {
           ...conversation,
           avatar: member.avatar,
-          name: member.name,
+          title: member.name,
         },
       },
     });
@@ -61,6 +62,7 @@ const deleteConversationCtrl = async (req, res, next) => {
 const deleteAllConversationsCtrl = async (req, res, next) => {
   try {
     await Conversation.deleteMany({});
+    await Message.deleteMany({});
     res.status(200).json({
       messages: "All conversations deleted",
     });

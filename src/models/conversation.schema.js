@@ -8,6 +8,14 @@ const conversationSchema = mongoose.Schema(
       ref: "Message",
       default: null,
     },
+    avatar: {
+      type: String,
+      default: null,
+    },
+    title: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

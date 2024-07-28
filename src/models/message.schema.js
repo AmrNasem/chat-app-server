@@ -11,14 +11,22 @@ const messageSchema = mongoose.Schema(
       type: String,
       required: true,
     },
-    seen: {
-      type: Boolean,
-      default: false,
-    },
-    received: {
-      type: Boolean,
-      default: false,
-    },
+    read: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "User",
+        default: [],
+        unique: true,
+      },
+    ],
+    received: [
+      {
+        type: mongoose.Types.ObjectId,
+        ref: "User",
+        default: [],
+        unique: true,
+      },
+    ],
     text: {
       type: String,
       required: true,

@@ -1,39 +1,53 @@
-const User = require("../models/user.schema");
-const bcrypt = require("bcrypt");
-const { createError } = require("../services/error");
-const jwt = require("jsonwebtoken");
+const {
+  getAllUsers,
+  login,
+  signup,
+  getSuggestions,
+} = require("../models/user.model");
 
-const getAllUsersCtrl = async (req, res) => {
-  const users = await User.find({}, "-password -__v");
+const getAllUsersCtrl = async (req, res, next) => {
+  try {
+    const users = await getAllUsers();
 
-  res.status(200).json({
-    message: "Got your users successfully",
-    payload: {
-      users,
-    },
-  });
+    res.status(200).json({
+      message: "Got your users successfully",
+      payload: {
+        users,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
+};
+
+const getSuggestionsCtrl = async (req, res, next) => {
+  try {
+    const suggestions = await getSuggestions(req.user._id);
+    res.status(200).json({
+      message: "Got your suggestions successfully!",
+      payload: {
+        suggestions,
+      },
+    });
+  } catch (err) {
+    next(err);
+  }
 };
 
 const loginCtrl = async (req, res, next) => {
   const { email, password } = req.body;
-  const user = await User.findOne({ email }, "-__v");
   try {
-    if (!user) throw createError(400, "Invalid email or password");
-    const { password: pass, ...secureUser } = user._doc;
+    const { user, token } = await login(email, password);
 
-    const isIdentical = await bcrypt.compare(password, pass);
-    if (!isIdentical) throw createError(400, "Invalid email or password");
-
-    const token = jwt.sign({ _id: secureUser._id }, process.env.JWT_SECRET);
     return res
       .cookie("access_token", token, {
         httpOnly: true,
       })
-      .cookie("user_data", JSON.stringify(secureUser))
+      .cookie("user_data", JSON.stringify(user))
       .status(200)
       .json({
         message: "You logged in successfully.",
-        payload: { user: secureUser, token },
+        payload: { user, token },
       });
   } catch (err) {
     next(err);
@@ -42,18 +56,11 @@ const loginCtrl = async (req, res, next) => {
 
 const signupCtrl = async (req, res, next) => {
   const { email, password, name } = req.body;
-
-  const user = await User.findOne({ email });
-
   try {
-    if (user) throw createError(400, "This email was already taken!");
-    const hashedPassword = await bcrypt.hash(password, 8);
-    const newUser = new User({ email, password: hashedPassword, name });
-    await newUser.save();
-    const { password: pass, __v, ...secureUser } = newUser._doc;
+    const user = await signup({ email, password, name });
     return res.status(201).json({
       message: "Your account was created successfully.",
-      payload: { user: secureUser },
+      payload: { user },
     });
   } catch (err) {
     next(err);
@@ -73,4 +80,5 @@ module.exports = {
   signupCtrl,
   logoutCtrl,
   getAllUsersCtrl,
+  getSuggestionsCtrl,
 };

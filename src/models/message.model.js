@@ -1,45 +1,41 @@
 const { createError } = require("../services/error");
 const { getConversations } = require("./conversation.model");
 const Conversation = require("./conversation.schema");
-const Message = require("./message.shcema");
+const Message = require("./message.schema");
 
 const getMessages = async (conversationId, userId) => {
   const messages = await Message.find({
     conversation: conversationId,
-  }).populate("conversation", "-__v");
+  }).populate("conversation", "members");
 
-  return messages.map((m) => ({
-    ...m._doc,
-    conversation: m._doc.conversation._id,
-  }));
+  return messages;
 };
 
 const getUnreadMessages = async (userId) => {
   const conversations = await getConversations(userId);
-  const conversationIds = conversations.map((conv) => conv._id);
+  const conversationsIds = conversations.map((conv) => conv._id);
 
   return await Message.find({
-    conversation: { $in: conversationIds },
-    seen: false,
+    conversation: { $in: conversationsIds },
+    read: { $ne: userId },
     senderId: { $ne: userId },
+  }).populate("conversation", "members");
+};
+
+const readMessages = async (messagesIds, userId) => {
+  const condition = { _id: { $in: messagesIds } };
+  await Message.updateMany(condition, { $push: { read: userId } });
+
+  return await Message.find(condition).populate("conversation", "members");
+};
+
+const receiveMessages = async (messagesIds, userId) => {
+  const condition = { _id: { $in: messagesIds } };
+  await Message.updateMany(condition, {
+    $push: { received: userId },
   });
-};
 
-const readMessages = async (conversationId, userId) => {
-  await Message.updateMany(
-    { conversation: conversationId, senderId: { $ne: userId } },
-    { seen: true }
-  );
-};
-
-const receiveMessages = async (userId) => {
-  const conversations = await getConversations(userId);
-  const conversationIds = conversations.map((conv) => conv._id);
-
-  await Message.updateMany(
-    { conversation: { $in: conversationIds }, senderId: { $ne: userId } },
-    { received: true }
-  );
+  return await Message.find(condition).populate("conversation", "members");
 };
 
 const sendMessage = async (text, conversationId, senderId) => {
@@ -54,18 +50,23 @@ const sendMessage = async (text, conversationId, senderId) => {
     { _id: conversationId },
     { $set: { lastMessage: newMessage } }
   );
+  await newMessage.populate({
+    path: "conversation",
+    select: "-__v",
+    populate: [
+      {
+        path: "members",
+        select: "-password",
+      },
+      {
+        path: "lastMessage",
+        select: "-__v",
+        populate: { path: "conversation", select: "-__v" },
+      },
+    ],
+  });
 
-  const { __v, ...formattedMessage } = newMessage._doc;
-  return formattedMessage;
-};
-
-const receiveMessage = async (messageId) => {
-  const updatedMessage = await Message.findOneAndUpdate(
-    { _id: messageId },
-    { received: true },
-    { new: true }
-  );
-  return updatedMessage;
+  return newMessage._doc;
 };
 
 module.exports = {
@@ -74,5 +75,4 @@ module.exports = {
   getUnreadMessages,
   readMessages,
   receiveMessages,
-  receiveMessage,
 };

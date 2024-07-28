@@ -7,6 +7,7 @@ const {
   signupCtrl,
   logoutCtrl,
   getAllUsersCtrl,
+  getSuggestionsCtrl,
 } = require("../controllers/user.controller");
 const auth = require("../middlewares/auth.middleware");
 
@@ -16,5 +17,6 @@ userRouter.post("/login", loginCtrl);
 userRouter.post("/signup", signupCtrl);
 userRouter.post("/logout", auth, logoutCtrl);
 userRouter.get("/", auth, getAllUsersCtrl);
+userRouter.get("/suggestions", auth, getSuggestionsCtrl);
 
 module.exports = userRouter;

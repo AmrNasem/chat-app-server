@@ -1,6 +1,18 @@
 const { createError } = require("../services/error");
 const Conversation = require("./conversation.schema");
-const Message = require("./message.shcema");
+const Message = require("./message.schema");
+
+const customPopulation = [
+  {
+    path: "members",
+    select: "-__v -password",
+  },
+  {
+    path: "lastMessage",
+    select: "-__v",
+    populate: { path: "conversation" },
+  },
+];
 
 const getConversations = async (userId) => {
   const conversations = await Conversation.find(
@@ -8,11 +20,11 @@ const getConversations = async (userId) => {
       members: userId,
     },
     "-__v"
-  ).populate("members lastMessage", "-password -__v");
+  ).populate(customPopulation);
 
   return conversations.map((c) => {
     const member = c.members.find((m) => m._id.toString() !== userId);
-    return { ...c._doc, avatar: member.avatar, name: member.name };
+    return { ...c._doc, avatar: member.avatar, title: member.name };
   });
 };
 
@@ -24,7 +36,7 @@ const createConversation = async (memberId, userId) => {
       members: { $all: [memberId, userId] },
     },
     "-__v"
-  ).populate("members", "-password -__v");
+  ).populate(customPopulation);
 
   if (conversation) return { conversation: conversation._doc, exists: true };
 
@@ -33,7 +45,7 @@ const createConversation = async (memberId, userId) => {
   });
 
   await newConversation.save();
-  await newConversation.populate("members", "-password -__v");
+  await newConversation.populate(customPopulation);
 
   const { __v, ...formattedConversation } = newConversation._doc;
   return { conversation: formattedConversation, exists: false };
